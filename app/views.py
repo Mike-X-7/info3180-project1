@@ -67,6 +67,14 @@ def login():
 def load_user(id):
     return UserProfile.query.get(int(id))
 
+@app.route("/secure-page", methods=["GET"])
+@login_required
+def secure_page():
+    if not current_user.is_authenticated:
+        return redirect(url_for("login"), code=200)
+    """Renders secure page"""
+    return render_template('secure_page.html')
+
 ###
 # The functions below should be applicable to all Flask apps.
 ###
