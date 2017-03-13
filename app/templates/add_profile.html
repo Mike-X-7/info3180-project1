@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block main %}
+<div class="login-form center-block">
+    <h2 id="header">Please enter your details to create your Profile</h2>
+       <div id="wrapper">
+	<div id="inputs">
+    <form action="{{ url_for('add_profile') }}" method="post" enctype="multipart/form-data">
+      {{ form.csrf_token }}
+      <div class="form-group">
+       <p> {{ form.firstname.label }}</p>
+        {{ form.firstname(class='form-control', placeholder="Enter your Firstname") }}
+      </div>
+      <div class="form-group">
+        <p>{{ form.lastname.label }}</p>
+        {{ form.lastname(class='form-control', placeholder="Enter your Lastname") }}
+      </div>
+      <div class="form-group">
+        <p>{{ form.username.label }}</p>
+        {{ form.username(class='form-control', placeholder="Enter your Username") }}
+      </div>
+      <div class="form-group">
+        <p>{{ form.age.label }}</p>
+        {{ form.age(class='form-control', placeholder="Enter your age") }}
+      </div>
+      <div class="form-group">
+        <p>{{ form.gender.label }}</p>
+        {{ form.gender(class='form-control') }}
+      </div>
+      <div class="form-group">
+        <p>{{ form.bio.label }}</p>
+        {{ form.bio(class='form-control', placeholder="Tell me about yourself") }}
+      </div>
+      <div class="form-group">
+        <p>{{ form.image.label }}</p>
+        {{ form.image(class='form-control') }}
+      </div>
+
+      <button type="submit" name="submit" id="submit" class="btn btn-primary btn-block">Submit</button>
+    </form>
+    </div>
+    </div>
+  </div>
+{% endblock %}
