@@ -5,84 +5,93 @@ Werkzeug Documentation:  http://werkzeug.pocoo.org/documentation/
 This file creates your application.
 """
 
-from app import app, db, login_manager
-from flask import render_template, request, redirect, url_for, flash
-from flask_login import login_user, logout_user, current_user, login_required
+import os, time
+import psycopg2
+from app import app, db
+from flask import render_template, request, redirect, url_for, flash,json, jsonify,g,session
 from forms import LoginForm
 from models import UserProfile
+from datetime import datetime
+from random import getrandbits 
+from app.models import UserProfile
+from app.forms import LoginForm
+from werkzeug.utils import secure_filename
+
 
 
 ###
 # Routing for your application.
 ###
 
-@app.route('/')
+@app.route('/', methods=["GET", "POST"])
 def home():
+    
     """Render website's home page."""
     return render_template('home.html')
+    
+@app.route('/profile/', methods=['POST','GET'])
+def add_profile():
+    form = LoginForm(request.form)
+    if request.method == "POST":
+        file = request.files['image']  
+        image = secure_filename(file.filename)
+        file.save(os.path.join("app/static/uploads", image))
+        new_user = UserProfile(form.firstname.data, form.lastname.data,form.username.data, form.age.data, form.gender.data, form.bio.data, image, datetime.now())
+        db.session.add(new_user)
+        db.session.commit()
+        flash('New User Profile created')
+        return redirect('/profile/'+str(UserProfile.query.filter_by(username=new_user.username).first().id))
+        #return redirect(url_for('list_user_profiles' , id=new_user.id))
+    else:
+        """Render website's home page."""
+        return render_template('add_profile.html', form=form)
+
+      
+
+@app.route('/profiles/',methods=["POST","GET"])
+def list_user_profiles():
+    users = db.session.query(UserProfile).all()
+    list_of_profiles=[]
+    for user in users:
+        list_of_profiles.append({'username':user.username,'id':user.id})
+        if request.method == 'POST' and request.headers['Content-Type']== 'application/json':
+            return jsonify(users=userlist)
+        return render_template('list_user_profiles.html', users=users)
+
+
+def timeinfo(entry):
+    day = time.strftime("%a")
+    date = time.strftime("%d")
+    if (date <10):
+        date = date.lstrip('0')
+    month = time.strftime("%b")
+    year = time.strftime("%Y")
+    return day + ", " + date + " " + month + " " + year
+    
+@app.route('/profile/<int:id>', methods=['POST', 'GET'])
+def view_individual_profile(id):
+    user = UserProfile.query.filter_by(id=id).first()
+    if not user:
+      flash("No such user")
+    else:
+      image = '/static/uploads/' + user.image
+      if request.method == 'POST' or ('Content-Type' in request.headers and request.headers['Content-Type'] == 'application/json'):
+          return jsonify(id=user.id, image=image,firstname=user.firstname, lastname=user.lastname,
+          username=user.username,age=user.age,created_on=user.created_on)
+      else:
+            user = {'id':user.id,'image':image,'firstname':user.firstname, 'lastname':user.lastname,'username':user.username,'age':user.age, 
+            'gender':user.gender,'bio':user.bio, 'created_on':timeinfo(user.created_on)}
+            return render_template('view_individual_profile.html', user=user)
+    return redirect(url_for("profiles"))
+
+
 
 @app.route('/about/')
 def about():
     """Render the website's about page."""
     return render_template('about.html')
 
-@app.route("/login", methods=["GET", "POST"])
-def login():
-    
-    if current_user.is_authenticated:
-        return redirect(url_for("secure_page"), code=200)
-        
-    form = LoginForm()
-    if request.method == "POST":
-        # change this to actually validate the entire form submission
-        # and not just one field
-        if form.validate_on_submit():
-            # Get the username and password values from the form.
-            username = form.username.data
-            password = form.password.data
 
-            # using your model, query database for a user based on the username
-            # and password submitted
-            # store the result of that query to a `user` variable so it can be
-            # passed to the login_user() method.
-            user = UserProfile.query.filter_by(username=username, password=password).first()
-            
-            if user:
-
-                # get user id, load into session
-                login_user(user)
-    
-                #flash login message
-                flash('Logged in successfully.', 'success')
-                next = request.args.get('next')
-                #redirect to secure page route
-                return redirect(url_for('secure_page'))
-            else:
-                flash('Username or Password is incorrect.', 'Unsuccessful')
-    return render_template("login.html", form=form)
-
-# user_loader callback. This callback is used to reload the user object from
-# the user ID stored in the session
-@login_manager.user_loader
-def load_user(id):
-    return UserProfile.query.get(int(id))
-
-@app.route("/secure-page", methods=["GET"])
-@login_required
-def secure_page():
-    if not current_user.is_authenticated:
-        return redirect(url_for("login"), code=200)
-    """Renders secure page"""
-    return render_template('secure_page.html')
-
-#logout route
-@app.route ("/logout")
-@login_required
-def logout ():
-    logout_user()
-    flash('Now logged out')
-    return redirect(url_for('home'))
- 
 
 ###
 # The functions below should be applicable to all Flask apps.
