@@ -43,6 +43,7 @@ def add_profile():
         return redirect('/profile/'+str(UserProfile.query.filter_by(username=new_user.username).first().id))
         #return redirect(url_for('list_user_profiles' , id=new_user.id))
     else:
+        flash("Please complete the form before Submitting")
         """Render website's home page."""
         return render_template('add_profile.html', form=form)
 

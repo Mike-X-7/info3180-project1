@@ -5,7 +5,7 @@
     <h2 id="header">Please enter your details to create your Profile</h2>
        <div id="wrapper">
 	<div id="inputs">
-    <form action="{{ url_for('add_profile') }}" method="post" enctype="multipart/form-data">
+    <form name="myForm" action="{{ url_for('add_profile') }}" onsubmit="return validateForm()" method="post" enctype="multipart/form-data">
       {{ form.csrf_token }}
       <div class="form-group">
        <p> {{ form.firstname.label }}</p>
